@@ -172,6 +172,7 @@
         <button data-font="condensed" class="seg" type="button">Condensada</button>
       </div>
       <div class="slider" style="margin-top:14px"><label>Espaçamento entre fotos <b><span id="vGap">1.6</span>%</b></label><input type="range" id="gap" min="0" max="4" step="0.2" value="1.6"></div>
+      <label class="checkrow" style="margin-top:10px"><input type="checkbox" id="fillLast" checked> Preencher espaço quando sobra uma foto (ocupa a largura toda)</label>
     </div>
 
     <div class="card">
@@ -236,7 +237,7 @@ const state={
   sigDefault:null,                           // assinatura guardada
   sigOverride:null,                          // assinatura só desta sessão
   sig:{size:.30,bottom:.03},
-  style:{frame:"simple",title:"bar",gap:.016,font:"bold"},
+  style:{frame:"simple",title:"bar",gap:.016,font:"bold",fillLast:true},
   photos:[]                                  // [{id,img,dataUrl,title,name,crop}]
 };
 let uid=0;
@@ -267,7 +268,7 @@ function loadConfig(){
   if(s.margins) state.margins=s.margins;
   if(typeof s.showGuides==="boolean") state.showGuides=s.showGuides;
   if(s.sig) state.sig=s.sig;
-  if(s.style) state.style=Object.assign({frame:"simple",title:"bar",gap:.016,font:"bold"},s.style);
+  if(s.style) state.style=Object.assign({frame:"simple",title:"bar",gap:.016,font:"bold",fillLast:true},s.style);
   if('sigDefault' in s){
     if(s.sigDefault){
       loadImage(s.sigDefault).then(img=>{ state.sigDefault={img,dataUrl:s.sigDefault}; syncSigUI(); render(); });
@@ -427,6 +428,7 @@ function canvasSize(){
 function computeCells(rx,ry,rw,rh,gap){
   const n=state.photos.length, cells=[];
   if(n===0) return cells;
+  const fill=state.style.fillLast;   // última foto sozinha ocupa a largura toda
   if(state.template==="featured"){
     if(n===1){ cells.push({x:rx,y:ry,w:rw,h:rh,photoIndex:0}); return cells; }
     const pairRows=Math.ceil((n-1)/2);
@@ -438,17 +440,28 @@ function computeCells(rx,ry,rw,rh,gap){
     let y=ry+bigH+gap;
     const cw=(rw-gap)/2;
     for(let i=1;i<n;i+=2){
-      cells.push({x:rx,y,w:cw,h:rowUnit,photoIndex:i});
-      if(i+1<n) cells.push({x:rx+cw+gap,y,w:cw,h:rowUnit,photoIndex:i+1});
+      const lone=(i+1>=n);
+      if(fill && lone){
+        cells.push({x:rx,y,w:rw,h:rowUnit,photoIndex:i});
+      }else{
+        cells.push({x:rx,y,w:cw,h:rowUnit,photoIndex:i});
+        if(i+1<n) cells.push({x:rx+cw+gap,y,w:cw,h:rowUnit,photoIndex:i+1});
+      }
       y+=rowUnit+gap;
     }
   }else{
     const rows=Math.ceil(n/2);
     const cw=(rw-gap)/2;
     const ch=(rh-(rows-1)*gap)/rows;
+    const odd=(n%2===1);
     for(let i=0;i<n;i++){
-      const col=i%2,row=Math.floor(i/2);
-      cells.push({x:rx+col*(cw+gap),y:ry+row*(ch+gap),w:cw,h:ch,photoIndex:i});
+      if(fill && odd && i===n-1){
+        const row=Math.floor(i/2);
+        cells.push({x:rx,y:ry+row*(ch+gap),w:rw,h:ch,photoIndex:i});   // preenche o espaço vazio
+      }else{
+        const col=i%2,row=Math.floor(i/2);
+        cells.push({x:rx+col*(cw+gap),y:ry+row*(ch+gap),w:cw,h:ch,photoIndex:i});
+      }
     }
   }
   return cells;
@@ -608,6 +621,7 @@ function syncStyleUI(){
   document.getElementById("styleHint").hidden=(state.style.frame!=="print");
   document.getElementById("gap").value=(state.style.gap*100).toFixed(1);
   document.getElementById("vGap").textContent=(state.style.gap*100).toFixed(1);
+  document.getElementById("fillLast").checked=state.style.fillLast;
 }
 document.getElementById("frameSeg").addEventListener("click",e=>{
   const b=e.target.closest(".seg");if(!b)return;
@@ -625,6 +639,9 @@ document.getElementById("gap").addEventListener("input",e=>{
   state.style.gap=(+e.target.value)/100;
   document.getElementById("vGap").textContent=(+e.target.value).toFixed(1);
   saveConfig();render();
+});
+document.getElementById("fillLast").addEventListener("change",e=>{
+  state.style.fillLast=e.target.checked;saveConfig();render();
 });
 
 /* ---------- Margens ---------- */
