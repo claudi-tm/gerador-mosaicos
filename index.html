@@ -173,6 +173,7 @@
       </div>
       <div class="slider" style="margin-top:14px"><label>Espaçamento entre fotos <b><span id="vGap">1.6</span>%</b></label><input type="range" id="gap" min="0" max="4" step="0.2" value="1.6"></div>
       <label class="checkrow" style="margin-top:10px"><input type="checkbox" id="fillLast" checked> Preencher espaço quando sobra uma foto (ocupa a largura toda)</label>
+      <label class="checkrow" style="margin-top:8px"><input type="checkbox" id="photoBorder" checked> Contorno fino à volta das fotos</label>
     </div>
 
     <div class="card">
@@ -237,7 +238,7 @@ const state={
   sigDefault:null,                           // assinatura guardada
   sigOverride:null,                          // assinatura só desta sessão
   sig:{size:.30,bottom:.03},
-  style:{frame:"simple",title:"bar",gap:.016,font:"bold",fillLast:true},
+  style:{frame:"simple",title:"bar",gap:.016,font:"bold",fillLast:true,border:true},
   photos:[]                                  // [{id,img,dataUrl,title,name,crop}]
 };
 let uid=0;
@@ -268,7 +269,7 @@ function loadConfig(){
   if(s.margins) state.margins=s.margins;
   if(typeof s.showGuides==="boolean") state.showGuides=s.showGuides;
   if(s.sig) state.sig=s.sig;
-  if(s.style) state.style=Object.assign({frame:"simple",title:"bar",gap:.016,font:"bold",fillLast:true},s.style);
+  if(s.style) state.style=Object.assign({frame:"simple",title:"bar",gap:.016,font:"bold",fillLast:true,border:true},s.style);
   if('sigDefault' in s){
     if(s.sigDefault){
       loadImage(s.sigDefault).then(img=>{ state.sigDefault={img,dataUrl:s.sigDefault}; syncSigUI(); render(); });
@@ -304,8 +305,10 @@ function drawCover(ctx,img,x,y,w,h,r,crop){
   const dx=x-ox*fx, dy=y-oy*fy;
   ctx.save();roundRectPath(ctx,x,y,w,h,r);ctx.clip();
   ctx.drawImage(img,dx,dy,dw,dh);ctx.restore();
-  ctx.save();roundRectPath(ctx,x+.75,y+.75,w-1.5,h-1.5,r);
-  ctx.lineWidth=1.5;ctx.strokeStyle="rgba(232,232,228,0.55)";ctx.stroke();ctx.restore();
+  if(state.style.border){
+    ctx.save();roundRectPath(ctx,x+.75,y+.75,w-1.5,h-1.5,r);
+    ctx.lineWidth=1.5;ctx.strokeStyle="rgba(232,232,228,0.55)";ctx.stroke();ctx.restore();
+  }
 }
 function fontPreset(){
   switch(state.style.font){
@@ -622,6 +625,7 @@ function syncStyleUI(){
   document.getElementById("gap").value=(state.style.gap*100).toFixed(1);
   document.getElementById("vGap").textContent=(state.style.gap*100).toFixed(1);
   document.getElementById("fillLast").checked=state.style.fillLast;
+  document.getElementById("photoBorder").checked=state.style.border;
 }
 document.getElementById("frameSeg").addEventListener("click",e=>{
   const b=e.target.closest(".seg");if(!b)return;
@@ -642,6 +646,9 @@ document.getElementById("gap").addEventListener("input",e=>{
 });
 document.getElementById("fillLast").addEventListener("change",e=>{
   state.style.fillLast=e.target.checked;saveConfig();render();
+});
+document.getElementById("photoBorder").addEventListener("change",e=>{
+  state.style.border=e.target.checked;saveConfig();render();
 });
 
 /* ---------- Margens ---------- */
