@@ -192,7 +192,8 @@
       </div>
       <div id="sigControls" hidden>
         <div class="slider" style="margin-top:12px"><label>Tamanho <b><span id="vSigSize">30</span>%</b></label><input type="range" id="sigSize" min="10" max="80" value="30"></div>
-        <div class="slider"><label>Distância do fundo <b><span id="vSigBottom">3</span>%</b></label><input type="range" id="sigBottom" min="0" max="45" value="3"></div>
+        <div class="slider"><label>Posição vertical <b><span id="vSigBottom">3</span>%</b></label><input type="range" id="sigBottom" min="0" max="45" value="3"></div>
+        <div class="slider"><label>Posição horizontal <b><span id="vSigX">Centro</span></b></label><input type="range" id="sigX" min="0" max="100" value="50"></div>
         <div style="font-size:12px;margin-top:2px">
           <button class="linkbtn" id="sigTemp" type="button">usar outra só desta vez</button>
           <span id="sigTempState" hidden> · <b style="color:var(--gold)">a usar temporária</b> · <button class="linkbtn" id="sigRestore" type="button">repor padrão</button></span>
@@ -246,7 +247,7 @@ const state={
   showGuides:true,
   sigDefault:null,                           // assinatura guardada
   sigOverride:null,                          // assinatura só desta sessão
-  sig:{size:.30,bottom:.03},
+  sig:{size:.30,bottom:.03,x:.5},
   style:{frame:"simple",title:"bar",gap:.016,font:"bold",fillLast:true,border:true},
   photos:[]                                  // [{id,img,dataUrl,title,name,crop}]
 };
@@ -277,7 +278,7 @@ function loadConfig(){
   if(s.template) state.template=s.template;
   if(s.margins) state.margins=s.margins;
   if(typeof s.showGuides==="boolean") state.showGuides=s.showGuides;
-  if(s.sig) state.sig=s.sig;
+  if(s.sig) state.sig=Object.assign({size:.30,bottom:.03,x:.5},s.sig);
   if(s.style) state.style=Object.assign({frame:"simple",title:"bar",gap:.016,font:"bold",fillLast:true,border:true},s.style);
   if('sigDefault' in s){
     if(s.sigDefault){
@@ -295,6 +296,8 @@ function loadConfig(){
   document.getElementById("vSigSize").textContent=Math.round(state.sig.size*100);
   document.getElementById("sigBottom").value=Math.round(state.sig.bottom*100);
   document.getElementById("vSigBottom").textContent=Math.round(state.sig.bottom*100);
+  document.getElementById("sigX").value=Math.round((state.sig.x==null?.5:state.sig.x)*100);
+  document.getElementById("vSigX").textContent=sigXLabel(Math.round((state.sig.x==null?.5:state.sig.x)*100));
 }
 
 /* ---------- Utilitários ---------- */
@@ -540,7 +543,8 @@ function render(forceGuides){
   if(sig){
     const sw=CW*state.sig.size;
     const sh=sw*(sig.img.height/sig.img.width);
-    ctx.drawImage(sig.img,(CW-sw)/2,CH*(1-state.sig.bottom)-sh,sw,sh);
+    const sx=(state.sig.x==null?0.5:state.sig.x);
+    ctx.drawImage(sig.img,sx*(CW-sw),CH*(1-state.sig.bottom)-sh,sw,sh);
   }
 
   // guias (só ecrã)
@@ -629,6 +633,11 @@ document.getElementById("sigSize").addEventListener("input",e=>{
 document.getElementById("sigBottom").addEventListener("input",e=>{
   state.sig.bottom=(+e.target.value)/100;
   document.getElementById("vSigBottom").textContent=e.target.value;saveConfig();render();
+});
+function sigXLabel(v){ v=+v; return v===50?"Centro":v===0?"Esquerda":v===100?"Direita":v+"%"; }
+document.getElementById("sigX").addEventListener("input",e=>{
+  state.sig.x=(+e.target.value)/100;
+  document.getElementById("vSigX").textContent=sigXLabel(e.target.value);saveConfig();render();
 });
 
 /* ---------- Estilo dos cards ---------- */
