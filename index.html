@@ -186,6 +186,7 @@
             <input type="file" id="sigInput" accept="image/*">
           </label>
           <button class="linkbtn danger" id="sigRemove" type="button" hidden style="margin-left:10px">remover</button>
+          <button class="linkbtn" id="sigFactory" type="button" hidden style="margin-left:10px">repor assinatura FJU</button>
         </div>
       </div>
       <div id="sigControls" hidden>
@@ -585,9 +586,14 @@ function syncSigUI(){
   if(eff){t.style.backgroundImage="url("+eff.dataUrl+")";ctrl.hidden=false;}
   else{t.style.backgroundImage="none";ctrl.hidden=true;}
   r.hidden=!state.sigDefault;
+  document.getElementById("sigFactory").hidden=!!state.sigDefault;   // só quando não há padrão
   l.textContent=state.sigDefault?"Trocar padrão":"Carregar assinatura";
   tempState.hidden=!state.sigOverride;
 }
+document.getElementById("sigFactory").addEventListener("click",async()=>{
+  try{ state.sigDefault={img:await loadImage(BUILTIN_SIG),dataUrl:BUILTIN_SIG}; }catch(e){}
+  state.sigOverride=null;syncSigUI();saveConfig();render();
+});
 document.getElementById("sigInput").addEventListener("change",async e=>{
   const f=e.target.files[0];if(!f)return;
   const dataUrl=await fileToDataUrl(f);const img=await loadImage(dataUrl);
