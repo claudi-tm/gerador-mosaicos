@@ -140,15 +140,14 @@
         </div>
       </div>
       <p class="hint">Fica guardada para as próximas vezes (ao usares o ficheiro descarregado).</p>
-      <div id="noBgWrap" style="margin-top:12px">
-        <div style="font-size:12.5px;font-weight:600;margin-bottom:6px">Fundo quando não há imagem</div>
-        <div class="segmented" id="noBgSeg" style="grid-template-columns:1fr 1fr">
-          <button data-nobg="dark" class="seg active" type="button">Escuro</button>
-          <button data-nobg="transparent" class="seg" type="button">Transparente</button>
-          <button data-nobg="white" class="seg" type="button">Branco</button>
-          <button data-nobg="green" class="seg" type="button">Verde (chroma)</button>
-        </div>
-        <p class="hint">Para recortar o fundo noutras apps. Transparente e Verde saem no PNG descarregado.</p>
+      <div id="noBgWrap" style="margin-top:12px;display:flex;align-items:center;gap:10px">
+        <label for="noBgSelect" style="font-size:12.5px;font-weight:600;white-space:nowrap">Fundo sem imagem</label>
+        <select id="noBgSelect" title="Transparente e Verde saem no PNG descarregado, para recortar o fundo noutras apps" style="flex:1;min-width:0;padding:8px 10px;border:1.5px solid var(--line);border-radius:9px;font:inherit;font-size:13px;background:#fff;color:var(--ink);cursor:pointer">
+          <option value="dark">Escuro</option>
+          <option value="transparent">Transparente</option>
+          <option value="white">Branco</option>
+          <option value="green">Verde (chroma)</option>
+        </select>
       </div>
     </div>
 
@@ -607,11 +606,10 @@ function syncBgUI(){
   document.getElementById("noBgWrap").hidden=!!state.bg;   // só interessa quando não há imagem
 }
 function syncNoBgUI(){
-  document.querySelectorAll("#noBgSeg .seg").forEach(b=>b.classList.toggle("active",b.dataset.nobg===state.noBg));
+  document.getElementById("noBgSelect").value=state.noBg;
 }
-document.getElementById("noBgSeg").addEventListener("click",e=>{
-  const b=e.target.closest(".seg");if(!b)return;
-  state.noBg=b.dataset.nobg;syncNoBgUI();saveConfig();render();
+document.getElementById("noBgSelect").addEventListener("change",e=>{
+  state.noBg=e.target.value;syncNoBgUI();saveConfig();render();
 });
 document.getElementById("bgInput").addEventListener("change",async e=>{
   const f=e.target.files[0];if(!f)return;
