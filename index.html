@@ -11,6 +11,7 @@
     font-synthesis-weight:none;
   }
   *{box-sizing:border-box}
+  [hidden]{display:none!important}
   html,body{margin:0;padding:0}
   body{background:var(--surface);color:var(--ink);
     font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;
@@ -207,6 +208,13 @@
         + Adicionar fotos
         <input type="file" id="photoInput" accept="image/*" multiple>
       </label>
+      <div id="titlePrompt" hidden style="margin-top:10px;padding:10px 12px;border:1.5px solid var(--green);background:#effaf1;border-radius:10px;display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+        <span style="font-size:12.5px;font-weight:600;color:var(--green-d)">Usar os nomes dos ficheiros como títulos?</span>
+        <span style="display:flex;gap:8px">
+          <button class="btn btn-green" id="titleYes" type="button" style="padding:6px 16px">Sim</button>
+          <button class="btn btn-ghost" id="titleNo" type="button" style="padding:6px 16px">Não</button>
+        </span>
+      </div>
       <div class="photos" id="photoList"></div>
       <p class="hint" id="photoHint" hidden></p>
     </div>
@@ -557,6 +565,7 @@ function syncTemplateUI(){
   document.querySelectorAll(".tpl").forEach(b=>b.classList.toggle("active",b.dataset.tpl===state.template));
   document.getElementById("tplHint").textContent=TPL_HINTS[state.template]||"";
   refreshPhotoList();
+  if(typeof maybeAskTitles==="function") maybeAskTitles();
 }
 document.getElementById("templates").addEventListener("click",e=>{
   const b=e.target.closest(".tpl");if(!b)return;
@@ -690,8 +699,22 @@ async function addFiles(files){
     const base=f.name.replace(/\.[^.]+$/,"").replace(/[_-]+/g," ");
     state.photos.push({id:++uid,img,dataUrl,title:"",name:base,crop:{fx:.5,fy:.5,zoom:1}});
   }
-  refreshPhotoList();render();
+  refreshPhotoList();render();maybeAskTitles();
 }
+/* Perguntar se quer usar os nomes dos ficheiros como títulos (só na Grelha com títulos) */
+function capitalizeTitle(s){s=(s||"").trim();return s?s.charAt(0).toUpperCase()+s.slice(1):s;}
+function maybeAskTitles(){
+  const ask=(state.template==="grid-titles") && state.photos.some(p=>!(p.title||"").trim());
+  document.getElementById("titlePrompt").hidden=!ask;
+}
+document.getElementById("titleYes").addEventListener("click",()=>{
+  state.photos.forEach(p=>{ if(!(p.title||"").trim()) p.title=capitalizeTitle(p.name); });
+  document.getElementById("titlePrompt").hidden=true;
+  refreshPhotoList();render();
+});
+document.getElementById("titleNo").addEventListener("click",()=>{
+  document.getElementById("titlePrompt").hidden=true;
+});
 document.getElementById("photoInput").addEventListener("change",async e=>{await addFiles([...e.target.files]);e.target.value="";});
 function move(i,d){const j=i+d;if(j<0||j>=state.photos.length)return;
   [state.photos[i],state.photos[j]]=[state.photos[j],state.photos[i]];refreshPhotoList();render();}
